@@ -243,6 +243,10 @@
         <input type="number" id="cardManual" step="0.01" value="1" />
         <div class="hint">Editable si tu estado de cuenta muestra otro número.</div>
       </div>
+      <div class="field">
+        <label>Puntos Calificables</label>
+        <label class="checkbox-row" style="margin-top:10px;"><input type="checkbox" id="pcBonus"> Bonus +50% activo (Premium/Full, 23,500 PC)</label>
+      </div>
     </div>
   </section>
 
@@ -311,8 +315,15 @@
     <div class="section-label">Valoración del costo de oportunidad</div>
     <div class="field">
       <label>¿Cuánto vale para ti una milla que dejas de ganar? (centavos de USD)</label>
-      <input type="number" id="assumedValue" step="0.01" value="1.47">
-      <div class="hint">Por defecto usamos el valor de tu mejor combinación de canje (abajo lo verás recalculado tras presionar "Calcular"), pero puedes escribir tu propio número — por ejemplo el precio de compra directa de millas a LATAM (3.2¢ normal, 1.6¢ en promoción 50% off) o cualquier valor que te haga sentido. Este número es el que convierte "millas perdidas" en dólares en el resultado final.</div>
+      <input type="number" id="assumedValue" step="0.01" value="1.60">
+      <div class="btn-row" style="margin-top:8px;">
+        <button type="button" class="btn-sec" id="useValuePromo">Usar 1.6¢ (promo compra LATAM)</button>
+        <button type="button" class="btn-sec" id="useValueFull">Usar 3.2¢ (precio full compra LATAM)</button>
+        <button type="button" class="btn-sec" id="useValueBest">Usar valor bruto de este canje</button>
+      </div>
+      <div class="hint">
+        LATAM no te recompra millas, así que no hay un "precio de venta" real — solo referencias objetivas: lo que te costaría reponerlas comprando nuevas (1.6¢ en promoción, la más frecuente; 3.2¢ a precio full). Por defecto usamos 1.6¢ por ser una referencia realista y no manipulable por el canje que estás evaluando. Edítalo libremente si tienes tu propio criterio.
+      </div>
     </div>
   </section>
 
@@ -326,23 +337,23 @@
         <div class="verdict-badge" id="verdictBadge">—</div>
         <div class="value-num" id="valueNum">—</div>
         <div class="verdict-sub" id="verdictSub"></div>
+        <div id="breakdownLine" style="font-family:'IBM Plex Mono', monospace; font-size:12.5px; color:var(--text-dim); margin-top:12px; display:flex; gap:18px; justify-content:center; flex-wrap:wrap;"></div>
         <div class="fare-tag" id="routeTag" style="font-size:14px; font-weight:600; color:var(--text); margin-top:14px;"></div>
         <div class="fare-tag" id="fareTag"></div>
 
-        <div class="meter" id="meter">
+        <div class="meter" id="meter" style="background:linear-gradient(90deg, #3a2020 0%, #5a3a1a 25%, #4a4a1a 42%, #3a5528 67%, #1e5a3a 100%);">
           <div class="meter-pointer" id="meterPointer" style="left:0%;"></div>
           <div class="meter-marker" style="left:0%;"><div class="mlabel">0¢</div></div>
-          <div class="meter-marker" style="left:31%;"><div class="mlabel">1.0¢</div></div>
-          <div class="meter-marker" style="left:50%;"><div class="mlabel">1.6¢ promo</div></div>
-          <div class="meter-marker" style="left:100%;"><div class="mlabel">3.2¢ techo compra</div></div>
+          <div class="meter-marker" style="left:42%;"><div class="mlabel">1.0¢ razonable</div></div>
+          <div class="meter-marker" style="left:67%;"><div class="mlabel">1.6¢ muy bueno</div></div>
+          <div class="meter-marker" style="left:100%;"><div class="mlabel">2.4¢ imperdible+</div></div>
         </div>
         <div class="legend">
-          <span><i style="background:#5a3a1a;"></i>Ajustado / no conviene</span>
-          <span><i style="background:#4a4a1a;"></i>Razonable</span>
-          <span><i style="background:#2f4a2f;"></i>Bueno</span>
+          <span><i style="background:#7a2e26;"></i>No conviene</span>
+          <span><i style="background:#4a5a2a;"></i>Razonable</span>
+          <span><i style="background:#2f6a3f;"></i>Muy bueno</span>
           <span><i style="background:#1e5a3a;"></i>Imperdible</span>
         </div>
-
         <div class="btn-row">
           <button class="btn-sec" id="exportPdf">🖨️ Exportar a PDF</button>
           <button class="btn-sec" id="exportImg">🖼️ Exportar como imagen</button>
@@ -356,7 +367,10 @@
 
     <div class="panel">
       <h3>Detalle por combinación cotizada</h3>
-      <div class="explain">Valor bruto = ahorro dividido entre millas usadas. Valor marginal = qué tan bien "rinde" cada bloque adicional de millas frente a la combinación anterior.</div>
+      <div class="explain">
+        <b>Valor bruto</b> = ahorro total ÷ millas usadas en esa fila (compara siempre contra el 100% efectivo).<br>
+        <b>Valor marginal</b> = qué tan bien "rinde" solamente el <i>bloque adicional</i> de millas de esta fila frente a la fila anterior (ordenadas de menor a mayor millas). Ej: si pasar de 15,030 a 21,042 millas (+6,012 millas) te ahorra $78 más, el marginal de esa fila es $78÷6,012. Un marginal muy alto o negativo suele indicar un salto atípico entre dos cotizaciones específicas, no una tasa sostenida.
+      </div>
       <table id="tiersTable">
         <thead><tr><th>Combinación</th><th>Millas</th><th>Cash a pagar</th><th>Ahorro vs. 100% cash</th><th>Valor bruto/milla</th><th>Valor marginal</th></tr></thead>
         <tbody id="tiersBody"></tbody>
@@ -366,6 +380,16 @@
     <div class="panel">
       <h3>Costo de oportunidad — lo que dejas de ganar si pagas con millas</h3>
       <div class="explain">Se calcula sobre la <b>mejor combinación por valor</b> de la tabla de arriba (resaltada en verde), no necesariamente la que usa más millas.</div>
+      <div class="opp-grid" style="margin-bottom:14px;">
+        <div class="opp-box">
+          <div class="k">Precio 100% efectivo (lo que NO pagarías)</div>
+          <div class="v" id="refCashTotal">—</div>
+        </div>
+        <div class="opp-box">
+          <div class="k">Combinación de millas evaluada</div>
+          <div class="v" id="refBestTier">—</div>
+        </div>
+      </div>
       <div class="opp-grid">
         <div class="opp-box">
           <div class="k">Millas "voladas" LATAM perdidas</div>
@@ -390,21 +414,10 @@
       <h3>Puntos Calificables que perderías</h3>
       <div class="explain">
         Confirmado en el reglamento oficial LATAM Pass 2025: pagar con millas (100% millas o millas+dinero, sin importar el porcentaje) siempre da <b>0 Millas LATAM Pass y 0 Puntos Calificables</b> — nunca hay acumulación parcial. Los Puntos Calificables no tienen valor monetario directo (no se pueden canjear), solo te acercan a tu próxima Categoría Elite, así que aquí los mostramos como referencia informativa, no en dólares.
+        Usa el mismo tipo de ruta y el Bonus +50% que configuraste arriba en "Perfil del viajero".
       </div>
-      <div class="row">
-        <div class="field">
-          <label>Multiplicador Puntos Calificables</label>
-          <select id="pcMultiplier">
-            <option value="15">Nacional (x15 por US$1)</option>
-            <option value="6" selected>Internacional (x6 por US$1)</option>
-          </select>
-        </div>
-        <div class="field">
-          <label class="checkbox-row"><input type="checkbox" id="pcBonus"> Tengo activo el Bonus LATAM Pass +50% (tarifas Premium/Full, requiere 23,500 Puntos Calificables)</label>
-        </div>
-      </div>
-      <div class="opp-box" style="margin-top:10px;">
-        <div class="k">Puntos Calificables que perderías al pagar con millas</div>
+      <div class="opp-box" id="pcBox">
+        <div class="k">Puntos Calificables que perderías al pagar con millas <span id="pcFormula" style="opacity:.7;"></span></div>
         <div class="v" id="pcLost">—</div>
       </div>
     </div>
@@ -466,8 +479,21 @@ function updateEliteHint(){
   eliteHint.textContent = `Multiplicador aplicable: x${mult} sobre la tarifa neta (fuente: LATAM Pass oficial)`;
 }
 eliteCat.addEventListener('change', updateEliteHint);
-routeType.addEventListener('change', updateEliteHint);
+routeType.addEventListener('change', () => { updateEliteHint(); updatePuntosCalificables(); });
 updateEliteHint();
+
+// ---- Puntos Calificables: live update, single source of truth (routeType arriba) ----
+const pcMultByRoute = {nacional: 15, internacional: 6};
+function updatePuntosCalificables(){
+  const fare = parseFloat(fareUSD.value) || 0;
+  const pcMult = pcMultByRoute[routeType.value];
+  const pcBonus = document.getElementById('pcBonus').checked;
+  const pcLost = fare * pcMult * (pcBonus ? 1.5 : 1);
+  document.getElementById('pcLost').textContent = Math.round(pcLost).toLocaleString() + ' Puntos Calificables';
+  document.getElementById('pcFormula').textContent = `($${fare.toFixed(2)} × x${pcMult}${pcBonus ? ' × 1.5 bono' : ''})`;
+  return pcLost;
+}
+document.getElementById('pcBonus').addEventListener('change', updatePuntosCalificables);
 
 // ---- Tiers ----
 let tierCount = 0;
@@ -501,9 +527,10 @@ function updateCashTotal(){
   cashTotalLabel.textContent = '$' + total.toFixed(2);
   return total;
 }
-fareUSD.addEventListener('input', updateCashTotal);
+fareUSD.addEventListener('input', () => { updateCashTotal(); updatePuntosCalificables(); });
 taxUSD.addEventListener('input', updateCashTotal);
 updateCashTotal();
+updatePuntosCalificables();
 
 let lastResult = null;
 
@@ -539,12 +566,7 @@ function calcular(){
   });
 
   const best = tiers.reduce((a,b) => a.valuePerMile > b.valuePerMile ? a : b);
-
-  // update assumed value field default to best tier's value (only if user hasn't touched it manually this session)
   const assumedInput = document.getElementById('assumedValue');
-  if(!assumedInput.dataset.touched){
-    assumedInput.value = (best.valuePerMile*100).toFixed(2);
-  }
   const assumedValue = (parseFloat(assumedInput.value) || 0) / 100;
 
   const mult = eliteMultipliers[eliteCat.value][routeType.value];
@@ -557,11 +579,8 @@ function calcular(){
   const netSavings = best.savings - oppCostUSD;
   const netValuePerMile = netSavings / best.miles;
 
-  // Puntos Calificables
-  const pcMult = parseFloat(document.getElementById('pcMultiplier').value);
-  const pcBonus = document.getElementById('pcBonus').checked;
-  const pcLost = fare * pcMult * (pcBonus ? 1.5 : 1);
-  document.getElementById('pcLost').textContent = Math.round(pcLost).toLocaleString() + ' Puntos Calificables';
+  // Puntos Calificables (usa la función compartida, misma fuente que el panel en vivo)
+  const pcLost = updatePuntosCalificables();
 
   // Render tiers table
   const tbody = document.getElementById('tiersBody');
@@ -583,6 +602,8 @@ function calcular(){
   document.getElementById('cardMilesLost').textContent = Math.round(cardMilesLost).toLocaleString() + ' mi';
   document.getElementById('totalMilesLost').textContent = Math.round(totalMilesLost).toLocaleString() + ' mi';
   document.getElementById('oppCostUSD').textContent = '$' + oppCostUSD.toFixed(2) + ` (a ${(assumedValue*100).toFixed(2)}¢/milla)`;
+  document.getElementById('refCashTotal').textContent = `$${cashTotal.toFixed(2)} (Tarifa $${fare.toFixed(2)} + Tasas $${tax.toFixed(2)})`;
+  document.getElementById('refBestTier').textContent = `${best.miles.toLocaleString()} mi + $${best.cash.toFixed(2)}`;
 
   const badge = document.getElementById('verdictBadge');
   const sub = document.getElementById('verdictSub');
@@ -591,13 +612,18 @@ function calcular(){
 
   let label, color, subtext;
   const v = netValuePerMile;
-  if(v >= 0.032){ label='IMPERDIBLE'; color='#1e5a3a'; subtext='El valor neto supera el precio de comprar millas nuevas directo a LATAM (3.2¢). Canjear es matemáticamente mejor que comprar millas.'; }
-  else if(v >= 0.016){ label='MUY BUENO'; color='#2f6a3f'; subtext='Supera incluso el mejor precio histórico de promoción de compra de millas (1.6¢). Canje sólido.'; }
-  else if(v >= 0.010){ label='BUENO / RAZONABLE'; color='#4a5a2a'; subtext='Está dentro del rango que la comunidad de viajeros considera un canje razonable para LATAM Pass.'; }
-  else if(v >= 0.005){ label='AJUSTADO'; color='#6b4a1e'; subtext='Valor bajo. Solo conviene si tus millas están por vencer o no tienes uso mejor para ellas.'; }
-  else { label='NO CONVIENE'; color='#7a2e26'; subtext='El valor neto es muy bajo. Casi siempre es mejor pagar en efectivo y conservar las millas.'; }
+  if(v >= 0.024){ label='IMPERDIBLE'; color='#1e5a3a'; subtext='Supera por un buen margen el mejor precio histórico de promoción de compra de millas (1.6¢). Recomendación: usa tus millas, es una oferta excelente.'; }
+  else if(v >= 0.016){ label='MUY BUENO'; color='#2f6a3f'; subtext='Supera el mejor precio histórico de promoción de compra de millas (1.6¢). Recomendación: usa tus millas, buen canje.'; }
+  else if(v >= 0.010){ label='RAZONABLE'; color='#4a5a2a'; subtext='Está dentro del rango que la comunidad de viajeros considera aceptable para LATAM Pass. Recomendación: puedes usar millas, aunque no es una oferta excepcional.'; }
+  else { label='NO CONVIENE'; color='#7a2e26'; subtext='Estás gastando demasiadas millas para el ahorro que obtienes. Recomendación: paga en efectivo y conserva tus millas para un mejor canje.'; }
   badge.textContent = label; badge.style.background = color; badge.style.color = '#eef0e8';
   sub.textContent = subtext;
+
+  document.getElementById('breakdownLine').innerHTML = `
+    <span>Ahorro bruto: <b style="color:var(--text);">$${best.savings.toFixed(2)}</b> (${(best.valuePerMile*100).toFixed(3)}¢/mi)</span>
+    <span>− Costo oportunidad: <b style="color:var(--text);">$${oppCostUSD.toFixed(2)}</b> (${(assumedValue*100).toFixed(2)}¢/mi × ${Math.round(totalMilesLost).toLocaleString()} mi)</span>
+    <span>= Ahorro neto: <b style="color:var(--text);">$${netSavings.toFixed(2)}</b></span>
+    <span>÷ ${best.miles.toLocaleString()} mi = <b style="color:var(--text);">${(netValuePerMile*100).toFixed(3)}¢/mi</b></span>`;
 
   const fareCash = document.getElementById('fareTypeCash').value;
   const fareMiles = document.getElementById('fareTypeMiles').value;
@@ -607,7 +633,7 @@ function calcular(){
   const dest = destCode.value.trim() || '???';
   document.getElementById('routeTag').textContent = `${origin} → ${dest}`;
 
-  const pct = Math.max(0, Math.min(1, v / 0.032)) * 100;
+  const pct = Math.max(0, Math.min(1, v / 0.024)) * 100;
   document.getElementById('meterPointer').style.left = pct + '%';
 
   document.getElementById('results').style.display = 'block';
@@ -620,7 +646,12 @@ function calcular(){
     fareCash, fareMiles, label, oppCostUSD, pcLost
   };
 }
-document.getElementById('assumedValue').addEventListener('input', function(){ this.dataset.touched = '1'; });
+document.getElementById('useValuePromo').addEventListener('click', () => { document.getElementById('assumedValue').value = '1.60'; });
+document.getElementById('useValueFull').addEventListener('click', () => { document.getElementById('assumedValue').value = '3.20'; });
+document.getElementById('useValueBest').addEventListener('click', () => {
+  if(!lastResult){ alert('Primero presiona "Calcular" al menos una vez.'); return; }
+  document.getElementById('assumedValue').value = (lastResult.best.valuePerMile*100).toFixed(2);
+});
 
 // ---- Export PDF (print) ----
 document.getElementById('exportPdf').addEventListener('click', () => window.print());
@@ -649,7 +680,6 @@ document.getElementById('saveJson').addEventListener('click', () => {
     fareTypeMiles: document.getElementById('fareTypeMiles').value,
     fareUSD: fareUSD.value, taxUSD: taxUSD.value,
     assumedValue: document.getElementById('assumedValue').value,
-    pcMultiplier: document.getElementById('pcMultiplier').value,
     pcBonus: document.getElementById('pcBonus').checked,
     tiers: [...document.querySelectorAll('.tier')].map(el => ({
       miles: el.querySelector('.tierMiles').value,
@@ -678,11 +708,10 @@ document.getElementById('loadJsonInput').addEventListener('change', (e) => {
       document.getElementById('fareTypeMiles').value = data.fareTypeMiles;
       fareUSD.value = data.fareUSD; taxUSD.value = data.taxUSD;
       document.getElementById('assumedValue').value = data.assumedValue;
-      document.getElementById('pcMultiplier').value = data.pcMultiplier;
       document.getElementById('pcBonus').checked = data.pcBonus;
       tiersContainer.innerHTML = ''; tierCount = 0;
       data.tiers.forEach(t => addTier(t.miles, t.cash));
-      updateEliteHint(); updateCashTotal();
+      updateEliteHint(); updateCashTotal(); updatePuntosCalificables();
       alert('Datos cargados. Presiona "Calcular" para ver el resultado.');
     }catch(err){ alert('No se pudo leer el archivo. Verifica que sea un .json exportado desde esta app.'); }
   };
