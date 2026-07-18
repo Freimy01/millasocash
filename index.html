@@ -199,6 +199,14 @@
     <div class="section-label">Perfil del viajero</div>
     <div class="profile-grid">
       <div class="field">
+        <label>Origen</label>
+        <input type="text" id="originCode" placeholder="Ej. LIM" maxlength="3" style="text-transform:uppercase;">
+      </div>
+      <div class="field">
+        <label>Destino</label>
+        <input type="text" id="destCode" placeholder="Ej. MIA" maxlength="3" style="text-transform:uppercase;">
+      </div>
+      <div class="field">
         <label>Tipo de ruta</label>
         <select id="routeType">
           <option value="nacional">Nacional / Sudamérica</option>
@@ -318,6 +326,7 @@
         <div class="verdict-badge" id="verdictBadge">—</div>
         <div class="value-num" id="valueNum">—</div>
         <div class="verdict-sub" id="verdictSub"></div>
+        <div class="fare-tag" id="routeTag" style="font-size:14px; font-weight:600; color:var(--text); margin-top:14px;"></div>
         <div class="fare-tag" id="fareTag"></div>
 
         <div class="meter" id="meter">
@@ -444,6 +453,10 @@ cardSelect.addEventListener('change', () => {
   if(cardSelect.value === 'manual'){ cardManual.value = ''; cardManual.focus(); }
   else { cardManual.value = cardSelect.value; }
 });
+
+const originCode = document.getElementById('originCode');
+const destCode = document.getElementById('destCode');
+[originCode, destCode].forEach(el => el.addEventListener('input', () => { el.value = el.value.toUpperCase(); }));
 
 const eliteCat = document.getElementById('eliteCat');
 const routeType = document.getElementById('routeType');
@@ -591,6 +604,10 @@ function calcular(){
   const fareMiles = document.getElementById('fareTypeMiles').value;
   document.getElementById('fareTag').textContent = `Tarifa comparada — Efectivo: ${fareCash} · Millas: ${fareMiles}`;
 
+  const origin = originCode.value.trim() || '???';
+  const dest = destCode.value.trim() || '???';
+  document.getElementById('routeTag').textContent = `${origin} → ${dest}`;
+
   const pct = Math.max(0, Math.min(1, v / 0.032)) * 100;
   document.getElementById('meterPointer').style.left = pct + '%';
 
@@ -598,6 +615,7 @@ function calcular(){
   document.getElementById('results').scrollIntoView({behavior:'smooth', block:'start'});
 
   lastResult = {
+    origin, dest,
     routeType: routeType.value, eliteCat: eliteCat.value, cardRate,
     fare, tax, cashTotal, tiers, best, maxMilesTier, netValuePerMile, netSavings,
     fareCash, fareMiles, label, oppCostUSD, pcLost
@@ -625,6 +643,7 @@ document.getElementById('exportImg').addEventListener('click', () => {
 // ---- Save/Load JSON ----
 document.getElementById('saveJson').addEventListener('click', () => {
   const data = {
+    originCode: originCode.value, destCode: destCode.value,
     routeType: routeType.value, eliteCat: eliteCat.value,
     cardType: cardSelect.value, cardManual: cardManual.value,
     fareTypeCash: document.getElementById('fareTypeCash').value,
@@ -653,6 +672,7 @@ document.getElementById('loadJsonInput').addEventListener('change', (e) => {
   reader.onload = (ev) => {
     try{
       const data = JSON.parse(ev.target.result);
+      originCode.value = data.originCode || ''; destCode.value = data.destCode || '';
       routeType.value = data.routeType; eliteCat.value = data.eliteCat;
       cardSelect.value = data.cardType; cardManual.value = data.cardManual;
       document.getElementById('fareTypeCash').value = data.fareTypeCash;
@@ -682,7 +702,7 @@ function loadCompareList(){
     const badgeColors = {'IMPERDIBLE':'#1e5a3a','MUY BUENO':'#2f6a3f','BUENO / RAZONABLE':'#4a5a2a','AJUSTADO':'#6b4a1e','NO CONVIENE':'#7a2e26'};
     div.innerHTML = `
       <div class="info">
-        <span class="tag">${c.date}</span>
+        <span class="tag">${c.date} — ${c.origin || '???'} → ${c.dest || '???'}</span>
         Efectivo: <b>${c.fareCash}</b> $${c.cashTotal.toFixed(2)} &nbsp;|&nbsp; Millas: <b>${c.fareMiles}</b> ${c.maxMiles.toLocaleString()} mi + $${c.maxCash.toFixed(2)}
         &nbsp;→&nbsp; <b>${(c.netValuePerMile*100).toFixed(2)}¢/milla</b>
       </div>
@@ -704,6 +724,7 @@ document.getElementById('saveCompare').addEventListener('click', () => {
   const data = JSON.parse(localStorage.getItem('lp_compare') || '[]');
   data.push({
     date: new Date().toLocaleDateString('es-PE'),
+    origin: lastResult.origin, dest: lastResult.dest,
     fareCash: lastResult.fareCash, fareMiles: lastResult.fareMiles,
     cashTotal: lastResult.cashTotal, maxMiles: lastResult.maxMilesTier.miles,
     maxCash: lastResult.maxMilesTier.cash, netValuePerMile: lastResult.netValuePerMile,
