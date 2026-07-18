@@ -365,7 +365,7 @@
 
     <div class="panel">
       <h3>Costo de oportunidad — lo que dejas de ganar si pagas con millas</h3>
-      <div class="explain">Se calcula sobre la combinación de <b>máximo de millas</b> de la tabla de arriba (la que te deja pagar menos efectivo), porque es la que más millas "cuesta" en términos de oportunidad perdida.</div>
+      <div class="explain">Se calcula sobre la <b>mejor combinación por valor</b> de la tabla de arriba (resaltada en verde), no necesariamente la que usa más millas.</div>
       <div class="opp-grid">
         <div class="opp-box">
           <div class="k">Millas "voladas" LATAM perdidas</div>
@@ -539,12 +539,11 @@ function calcular(){
   });
 
   const best = tiers.reduce((a,b) => a.valuePerMile > b.valuePerMile ? a : b);
-  const maxMilesTier = tiers[tiers.length - 1];
 
   // update assumed value field default to best tier's value (only if user hasn't touched it manually this session)
   const assumedInput = document.getElementById('assumedValue');
   if(!assumedInput.dataset.touched){
-    assumedInput.value = (maxMilesTier.valuePerMile*100).toFixed(2);
+    assumedInput.value = (best.valuePerMile*100).toFixed(2);
   }
   const assumedValue = (parseFloat(assumedInput.value) || 0) / 100;
 
@@ -555,8 +554,8 @@ function calcular(){
   const totalMilesLost = flownMilesLost + cardMilesLost;
   const oppCostUSD = totalMilesLost * assumedValue;
 
-  const netSavings = maxMilesTier.savings - oppCostUSD;
-  const netValuePerMile = netSavings / maxMilesTier.miles;
+  const netSavings = best.savings - oppCostUSD;
+  const netValuePerMile = netSavings / best.miles;
 
   // Puntos Calificables
   const pcMult = parseFloat(document.getElementById('pcMultiplier').value);
@@ -617,7 +616,7 @@ function calcular(){
   lastResult = {
     origin, dest,
     routeType: routeType.value, eliteCat: eliteCat.value, cardRate,
-    fare, tax, cashTotal, tiers, best, maxMilesTier, netValuePerMile, netSavings,
+    fare, tax, cashTotal, tiers, best, netValuePerMile, netSavings,
     fareCash, fareMiles, label, oppCostUSD, pcLost
   };
 }
@@ -726,8 +725,8 @@ document.getElementById('saveCompare').addEventListener('click', () => {
     date: new Date().toLocaleDateString('es-PE'),
     origin: lastResult.origin, dest: lastResult.dest,
     fareCash: lastResult.fareCash, fareMiles: lastResult.fareMiles,
-    cashTotal: lastResult.cashTotal, maxMiles: lastResult.maxMilesTier.miles,
-    maxCash: lastResult.maxMilesTier.cash, netValuePerMile: lastResult.netValuePerMile,
+    cashTotal: lastResult.cashTotal, maxMiles: lastResult.best.miles,
+    maxCash: lastResult.best.cash, netValuePerMile: lastResult.netValuePerMile,
     label: lastResult.label
   });
   localStorage.setItem('lp_compare', JSON.stringify(data));
